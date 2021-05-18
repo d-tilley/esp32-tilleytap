@@ -1,29 +1,40 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
+#include <HX711_ADC.h>
 
-const int TEMPERATURE_DATA = 5;
+const int TEMPERATURE_DATA_PIN = 4;
+const int WEIGHT_DATA_PIN = 5;
+const int WEIGHT_SCK_PIN = 18;
 
-OneWire oneWire(TEMPERATURE_DATA);
-DallasTemperature ds18b20Client(&oneWire);
+OneWire oneWire(TEMPERATURE_DATA_PIN);
+DallasTemperature temperatureClient(&oneWire);
+HX711_ADC weightClient(WEIGHT_DATA_PIN, WEIGHT_SCK_PIN);
 
 void setup() {
-  ds18b20Client.begin();
+  Serial.begin(115200);
+  
+  temperatureClient.begin();
+
+  weightClient.begin();
+  weightClient.start(10);
 }
 
 void loop() {
-  String temperature = getTemperature();
-  Serial.print("temp: ");
-  Serial.println(temperature);
+  // get temperature reading
+  temperatureClient.requestTemperatures(); 
+  float tempF = temperatureClient.getTempFByIndex(0);
 
-  delay(60000);
+  // get weight reading
+  weightClient.update();
+  float weight = weightClient.getData();
+
+  //print the results
+  Serial.print("Temperature: ");
+  Serial.print(tempF);
+  Serial.println("F");
+
+  Serial.print("Weight: ");
+  Serial.println(weight);
+
+  delay(5000);
 }
-
-char* getTemperature() {
-  char* tempFString;
-  ds18b20Client.requestTemperatures();
-  float tempF = ds18b20Client.getTempFByIndex(0);
-  dtostrf(tempF, 3, 1, tempFString);
-  return tempFString;
-}
-
-
